@@ -1,0 +1,4 @@
+Machines,Capacities,CPU,RAM,Storage,GPU
+Machine_A,2,0.9,0.8,0.7,0.3
+Machine_B,3,0.7,0.9,0.9,0.8
+Machine_C,2,0.6,0.5,0.8,0.5
