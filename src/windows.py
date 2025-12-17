@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QLabel, QLineEdit, QFileDialog
+from PyQt5.QtWidgets import QWidget, QApplication, QPushButton, QLabel, QLineEdit, QFileDialog, QDialog, QMessageBox
 from PyQt5.QtGui import QFont, QValidator, QIntValidator
 from affect import affect_interns
 from affect_machines import assign_tasks_to_machines
@@ -21,7 +21,6 @@ class ActionButton(QPushButton):
     def update_action(self, action_callback):
         assert(callable(action_callback))
         self.clicked.connect(action_callback)
-
 
 class MainWindow(QWidget):
     def __init__(self):
@@ -127,15 +126,30 @@ class AffectWindow(QWidget):
 
         i_skills = i_data.iloc[:, 2:].to_numpy()
         s_skills = s_data.iloc[:, 1:].to_numpy()
-        results = affect_interns(s_skills, i_skills, i_caps)
 
-        aff_indices = np.argmax(results, axis=1)
-        summary = pd.DataFrame({
-            'Students': s_names,
-            'Affected Internships': i_titles[aff_indices]
-        })
+        try:
+            results = affect_interns(s_skills, i_skills, i_caps)
 
-        summary.to_csv(self.output_file, index=False)
+            aff_indices = np.argmax(results, axis=1)
+            summary = pd.DataFrame({
+                'Students': s_names,
+                'Affected Internships': i_titles[aff_indices]
+            })
+
+            summary.to_csv(self.output_file, index=False)
+            
+            dlg = QMessageBox(self,
+                    "Succès!",
+                    "Les étudiants ont été assignés à leurs stages avec succès!")
+            dlg.setStandardButtons(QMessageBox.Ok)
+            dlg.exec()
+
+        except Exception:
+            dlg = QMessageBox.critical(self,
+                    "Erreur!",
+                    f"Une erreur a été recontrée. Vérifier que les fichiers fournis sont dans le bon format.")
+            dlg.setStandardButtons(QMessageBox.Ok)
+            dlg.exec()
 
 
 class TaskAssignmentWindow(QWidget):

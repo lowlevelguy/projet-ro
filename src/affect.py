@@ -2,15 +2,6 @@ import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
 
-# def dist_squared(x : list, y : list):
-#     assert len(x) == len(y)
-#     
-#     n = len(x)
-#     dist_sq = 0
-#     for i in range(n):
-#         dist_sq += (x[i]-y[i])**2
-#     return dist_sq
-
 def affect_interns(students, internships, internship_capacities):
     students = np.asarray(students)
     internships = np.asarray(internships)
@@ -18,7 +9,6 @@ def affect_interns(students, internships, internship_capacities):
 
     assert students.ndim == 2 and internships.ndim == 2
     assert len(internships) == len(internship_capacities)
-    assert len(students) <= np.sum(internship_capacities)
 
     env = gp.Env()
     model = gp.Model(env=env)
@@ -31,11 +21,14 @@ def affect_interns(students, internships, internship_capacities):
     z = np.array([[model.addVar(vtype=GRB.BINARY, name=f"z{i}{j}")
                    for j in range(m)] for i in range(n)])
 
-    obj_func = gp.quicksum((d * z).flatten())
-    model.setObjective(obj_func, GRB.MINIMIZE)
+    total_affections = gp.quicksum(z.flatten())
+    total_distances = gp.quicksum((d * z).flatten())
+
+    model.setObjectiveN(total_affections, index=0, priority=2, name="maximize affectations")
+    model.setObjectiveN(total_distances, index=1, priority=1, name="minimize distances")
 
     for i in range(n):
-        model.addConstr(gp.quicksum(z[i, :]) == 1, f"aff{i}")
+        model.addConstr(gp.quicksum(z[i, :]) <= 1, f"aff{i}")
 
     for j in range(m):
         model.addConstr(gp.quicksum(z[:, j]) <= internship_capacities[j], f"cap{j}")
