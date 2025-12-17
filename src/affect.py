@@ -24,8 +24,9 @@ def affect_interns(students, internships, internship_capacities):
     total_affections = gp.quicksum(z.flatten())
     total_distances = gp.quicksum((d * z).flatten())
 
-    model.setObjectiveN(total_affections, index=0, priority=2, name="maximize affectations")
+    model.setObjectiveN(-total_affections, index=0, priority=2, name="maximize affectations")
     model.setObjectiveN(total_distances, index=1, priority=1, name="minimize distances")
+    model.ModelSense = GRB.MINIMIZE
 
     for i in range(n):
         model.addConstr(gp.quicksum(z[i, :]) <= 1, f"aff{i}")
