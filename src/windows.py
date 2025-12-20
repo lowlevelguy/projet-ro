@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import os
 from os import getcwd
 
 import numpy as np
@@ -86,7 +87,14 @@ class MainWindow(QWidget):
         self.task_win = TaskAssignmentWindow()
 
     def open_cutting_stock_window(self):
-        self.cutting_win = CuttingStockWindow()
+        # Launch the external cutting_stock_gui.py located in the current
+        # working directory (the directory where `main.py` was started).
+        script_path = os.path.join(getcwd(), "cutting_stock_gui.py")
+        try:
+            subprocess.Popen([sys.executable, script_path])
+            print(f"Launched {script_path}")
+        except Exception as e:
+            print(f"Failed to launch cutting_stock_gui.py: {e}")
 
     def open_facility_location_window(self):
         self.facility_win = FacilityLocationGUI()
