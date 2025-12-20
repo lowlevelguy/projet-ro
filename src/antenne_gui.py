@@ -18,7 +18,8 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from sol import solve_set_covering  # Import the solver logic
+
+from antenne import solve_set_covering  # Import the solver logic
 
 
 class AntennaCanvas(QWidget):
@@ -81,10 +82,10 @@ class AntennaCanvas(QWidget):
         for pos in self.antenna_positions:
             x, y, antenna_type = pos
             radius, _ = self.antenna_types[antenna_type]
-            
+
             # Get color for this antenna type
             color = colors[antenna_type % len(colors)]
-            
+
             # Draw coverage circle
             scaled_x = offset_x + x * scale
             scaled_y = offset_y + y * scale
@@ -101,20 +102,20 @@ class AntennaCanvas(QWidget):
 
         # Draw antenna positions
         antenna_size = 12
-        
+
         for pos in self.antenna_positions:
             x, y, antenna_type = pos
-            
+
             # Get color for this antenna type
             color = colors[antenna_type % len(colors)]
-            
+
             scaled_x = offset_x + x * scale
             scaled_y = offset_y + y * scale
 
             # Draw antenna as a triangle (tower shape) using QPolygonF
             painter.setPen(QPen(QColor(*color), 2))
             painter.setBrush(QColor(*color))
-            
+
             points = [
                 QPointF(scaled_x, scaled_y - antenna_size),
                 QPointF(scaled_x - antenna_size / 2, scaled_y + antenna_size / 2),
@@ -142,12 +143,12 @@ class AntennaCanvas(QWidget):
             Qt.AlignmentFlag.AlignLeft,
             f"Area: {self.area_width}m × {self.area_height}m",
         )
-        
+
         # Count antennas by type
         type_counts = {}
         for _, _, antenna_type in self.antenna_positions:
             type_counts[antenna_type] = type_counts.get(antenna_type, 0) + 1
-        
+
         y_offset = legend_y + 20
         painter.drawText(
             legend_x,
@@ -157,7 +158,7 @@ class AntennaCanvas(QWidget):
             Qt.AlignmentFlag.AlignLeft,
             f"Total Antennas: {len(self.antenna_positions)}",
         )
-        
+
         # Draw antenna type legend
         y_offset += 20
         for antenna_type in sorted(type_counts.keys()):
@@ -165,12 +166,12 @@ class AntennaCanvas(QWidget):
                 radius, price = self.antenna_types[antenna_type]
                 count = type_counts[antenna_type]
                 color = colors[antenna_type % len(colors)]
-                
+
                 # Draw colored square
                 painter.setBrush(QColor(*color))
                 painter.setPen(QPen(QColor(*color), 1))
                 painter.drawRect(legend_x, y_offset - 10, 15, 15)
-                
+
                 # Draw text
                 painter.setPen(QPen(QColor(200, 200, 200), 1))
                 painter.drawText(
@@ -186,12 +187,12 @@ class AntennaCanvas(QWidget):
 
 class VisualizationWindow(QMainWindow):
     """Separate window for displaying the antenna placement visualization."""
-    
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Antenna Placement Visualization")
         self.setGeometry(150, 150, 900, 700)
-        
+
         # Apply same dark theme
         self.setStyleSheet("""
             QMainWindow {
@@ -199,12 +200,12 @@ class VisualizationWindow(QMainWindow):
                     stop:0 #0f0f1e, stop:1 #1a1a2e);
             }
         """)
-        
+
         # Create canvas
         self.canvas = AntennaCanvas()
         self.canvas.setMinimumSize(800, 600)
         self.setCentralWidget(self.canvas)
-    
+
     def set_data(self, width, height, positions, antenna_types):
         """Update the canvas with new data."""
         self.canvas.set_data(width, height, positions, antenna_types)
@@ -325,21 +326,21 @@ class MainWindow(QMainWindow):
         title_layout = QVBoxLayout(title_widget)
         title_layout.setSpacing(5)
         title_layout.setContentsMargins(0, 0, 0, 10)
-        
+
         title = QLabel("Antenna Placement Optimizer")
         title.setStyleSheet(
             "font-size: 24pt; font-weight: 700; "
             "color: #4a90e2; margin-bottom: 0px; letter-spacing: 1px;"
         )
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         subtitle = QLabel("Multi-Type Set Covering with Interference Constraints")
         subtitle.setStyleSheet(
             "font-size: 11pt; font-weight: 400; color: #a8a8c0; "
             "margin-top: 0px; font-style: italic;"
         )
         subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        
+
         title_layout.addWidget(title)
         title_layout.addWidget(subtitle)
         main_layout.addWidget(title_widget)
@@ -404,7 +405,7 @@ class MainWindow(QMainWindow):
         self.antenna_types_table.horizontalHeader().setStretchLastSection(True)
         self.antenna_types_table.setMinimumHeight(200)
         self.antenna_types_table.setMaximumHeight(300)
-        
+
         # Add default antenna types
         self.set_default_antenna_types()
         main_layout.addWidget(self.antenna_types_table)
@@ -413,7 +414,7 @@ class MainWindow(QMainWindow):
         antenna_buttons_widget = QWidget()
         antenna_buttons_layout = QHBoxLayout(antenna_buttons_widget)
         antenna_buttons_layout.setSpacing(10)
-        
+
         add_antenna_btn = QPushButton("➕ Add Antenna Type")
         add_antenna_btn.clicked.connect(self.add_antenna_type)
         add_antenna_btn.setStyleSheet("""
@@ -427,7 +428,7 @@ class MainWindow(QMainWindow):
             }
         """)
         antenna_buttons_layout.addWidget(add_antenna_btn)
-        
+
         remove_antenna_btn = QPushButton("➖ Remove Selected")
         remove_antenna_btn.clicked.connect(self.remove_antenna_type)
         remove_antenna_btn.setStyleSheet("""
@@ -441,7 +442,7 @@ class MainWindow(QMainWindow):
             }
         """)
         antenna_buttons_layout.addWidget(remove_antenna_btn)
-        
+
         antenna_buttons_layout.addStretch()
         main_layout.addWidget(antenna_buttons_widget)
 
@@ -480,44 +481,46 @@ class MainWindow(QMainWindow):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setMinimumHeight(300)
         main_layout.addWidget(self.table)
-        
+
         # Initialize visualization window as None
         self.visualization_window = None
 
     def set_default_antenna_types(self):
         """Set default antenna types in the table."""
         default_types = [
-            (50, 100),    # Type 0: 50m radius, $100
-            (80, 250),    # Type 1: 80m radius, $250
-            (100, 500),   # Type 2: 100m radius, $500
+            (50, 100),  # Type 0: 50m radius, $100
+            (80, 250),  # Type 1: 80m radius, $250
+            (100, 500),  # Type 2: 100m radius, $500
         ]
-        
+
         self.antenna_types_table.setRowCount(len(default_types))
         for i, (radius, price) in enumerate(default_types):
             self.antenna_types_table.setItem(i, 0, QTableWidgetItem(f"Type {i}"))
             self.antenna_types_table.setItem(i, 1, QTableWidgetItem(str(radius)))
             self.antenna_types_table.setItem(i, 2, QTableWidgetItem(str(price)))
-            
+
             for col in range(3):
                 item = self.antenna_types_table.item(i, col)
                 if item:
                     item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-    
+
     def add_antenna_type(self):
         """Add a new row to the antenna types table."""
         row_count = self.antenna_types_table.rowCount()
         self.antenna_types_table.insertRow(row_count)
-        
+
         # Set default values
-        self.antenna_types_table.setItem(row_count, 0, QTableWidgetItem(f"Type {row_count}"))
+        self.antenna_types_table.setItem(
+            row_count, 0, QTableWidgetItem(f"Type {row_count}")
+        )
         self.antenna_types_table.setItem(row_count, 1, QTableWidgetItem("20"))
         self.antenna_types_table.setItem(row_count, 2, QTableWidgetItem("200"))
-        
+
         for col in range(3):
             item = self.antenna_types_table.item(row_count, col)
             if item:
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-    
+
     def remove_antenna_type(self):
         """Remove selected row from the antenna types table."""
         current_row = self.antenna_types_table.currentRow()
@@ -536,7 +539,7 @@ class MainWindow(QMainWindow):
                     self, "Invalid Input", "All values must be positive numbers!"
                 )
                 return
-            
+
             # Get antenna types from table
             antenna_types = []
             for i in range(self.antenna_types_table.rowCount()):
@@ -545,18 +548,20 @@ class MainWindow(QMainWindow):
                     price = float(self.antenna_types_table.item(i, 2).text())
                     if radius <= 0 or price <= 0:
                         QMessageBox.warning(
-                            self, "Invalid Input", 
-                            f"Antenna type {i}: radius and price must be positive!"
+                            self,
+                            "Invalid Input",
+                            f"Antenna type {i}: radius and price must be positive!",
                         )
                         return
                     antenna_types.append((radius, price))
                 except (ValueError, AttributeError):
                     QMessageBox.warning(
-                        self, "Invalid Input", 
-                        f"Antenna type {i}: please enter valid numbers!"
+                        self,
+                        "Invalid Input",
+                        f"Antenna type {i}: please enter valid numbers!",
                     )
                     return
-            
+
             if not antenna_types:
                 QMessageBox.warning(
                     self, "Invalid Input", "Please add at least one antenna type!"
@@ -564,9 +569,7 @@ class MainWindow(QMainWindow):
                 return
 
             # Solve the set covering problem
-            positions = solve_set_covering(
-                width, height, antenna_types, max_budget
-            )
+            positions = solve_set_covering(width, height, antenna_types, max_budget)
 
             if not positions:
                 QMessageBox.warning(
@@ -580,9 +583,12 @@ class MainWindow(QMainWindow):
             total_cost = sum(antenna_types[a][1] for _, _, a in positions)
 
             # Create and show visualization window
-            if self.visualization_window is None or not self.visualization_window.isVisible():
+            if (
+                self.visualization_window is None
+                or not self.visualization_window.isVisible()
+            ):
                 self.visualization_window = VisualizationWindow(self)
-            
+
             self.visualization_window.set_data(width, height, positions, antenna_types)
             self.visualization_window.show()
             self.visualization_window.raise_()
@@ -595,7 +601,7 @@ class MainWindow(QMainWindow):
             type_counts = {}
             for _, _, antenna_type in positions:
                 type_counts[antenna_type] = type_counts.get(antenna_type, 0) + 1
-            
+
             summary = f"Optimal placement found!\n"
             summary += f"Total antennas: {len(positions)}\n"
             summary += f"Total cost: ${total_cost:.2f} / ${max_budget:.2f}\n\n"
@@ -603,7 +609,9 @@ class MainWindow(QMainWindow):
             for antenna_type in sorted(type_counts.keys()):
                 radius, price = antenna_types[antenna_type]
                 count = type_counts[antenna_type]
-                summary += f"  Type {antenna_type}: {count}x (r={radius}m, ${price} each)\n"
+                summary += (
+                    f"  Type {antenna_type}: {count}x (r={radius}m, ${price} each)\n"
+                )
             summary += f"\n✨ Visualization window opened!"
 
             QMessageBox.information(self, "Success", summary)
