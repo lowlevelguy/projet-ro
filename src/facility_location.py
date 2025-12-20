@@ -29,7 +29,6 @@ class FacilityConstraints:
     total_area: float
     travel_cost_per_km: float
     grid_density: int = 10
-    base_population: int = 100
     base_annual_visits: int = 50
 
 
@@ -115,7 +114,6 @@ class FacilityLocationSolver:
         total_travel_cost = gp.LinExpr()
         for i in range(n_demand):
             cost_per_km = (self.constraints.travel_cost_per_km * 
-                          self.constraints.base_population *
                           self.constraints.base_annual_visits *
                           self.demand_points[i].demand_multiplier)
             for j in range(n_locations):
@@ -182,7 +180,7 @@ class FacilityLocationSolver:
                     nearest_fac = self.locations[j]
                     
                     travel_cost = (nearest_dist * self.constraints.travel_cost_per_km * 
-                                 self.constraints.base_population * self.constraints.base_annual_visits * demand.demand_multiplier)
+                                 self.constraints.base_annual_visits * demand.demand_multiplier)
                     
                     if demand.demand_multiplier > 1.0:
                         assignments.append({

@@ -197,6 +197,13 @@ class FacilityLocationGUI(QMainWindow):
         self.grid_density_spin.setToolTip("Number of grid points per side (e.g., 6 = 6x6 = 36 potential locations)")
         constraints_layout.addWidget(self.grid_density_spin, 3, 1)
         
+        constraints_layout.addWidget(QLabel("Base annual visits:"), 4, 0)
+        self.base_annual_visits_spin = QSpinBox()
+        self.base_annual_visits_spin.setRange(1, 10000)
+        self.base_annual_visits_spin.setValue(50)
+        self.base_annual_visits_spin.setToolTip("Base number of annual visits per zone")
+        constraints_layout.addWidget(self.base_annual_visits_spin, 4, 1)
+        
         constraints_group.setLayout(constraints_layout)
         layout.addWidget(constraints_group)
         
@@ -317,7 +324,8 @@ class FacilityLocationGUI(QMainWindow):
             num_facilities=self.num_fac_spin.value(),
             total_area=self.total_area_spin.value(),
             travel_cost_per_km=self.travel_cost_spin.value(),
-            grid_density=self.grid_density_spin.value()
+            grid_density=self.grid_density_spin.value(),
+            base_annual_visits=self.base_annual_visits_spin.value()
         )
         
         return demand_points, constraints
