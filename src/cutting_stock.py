@@ -318,7 +318,6 @@ class CuttingStockSolver:
         print("\n" + "="*60 + "\n")
     
     def _get_piece_name(self, piece_id: int) -> str:
-        """Récupère le nom d'une pièce par son ID"""
         for piece in self.pieces:
             if piece.id == piece_id:
                 return piece.name
