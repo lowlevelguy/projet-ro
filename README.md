@@ -12,5 +12,6 @@ To run the app, make sure you're running an active virtual environment with the 
 - `PyQt5`
 - `numpy`
 - `pandas`
+- `matplotlib`
 
 Once that's done, simply run the main file `src/main.py`.
