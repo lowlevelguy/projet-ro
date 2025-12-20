@@ -7,7 +7,8 @@ from PyQt5.QtGui import QFont, QValidator, QIntValidator
 from PyQt5.QtCore import Qt
 from affect import affect_interns
 from affect_machines import assign_tasks_to_machines
-from cutting_stock import solve_cutting_stock
+from cutting_stock_gui import CuttingStockGUI
+
 from os import getcwd
 
 def do_nothing():
@@ -61,8 +62,9 @@ class MainWindow(QWidget):
         self.task_win = TaskAssignmentWindow()
 
     def open_cutting_stock_window(self):
-        self.cutting_win = CuttingStockWindow()
-
+        # This creates an instance of YOUR specific GUI class
+        self.cutting_win = CuttingStockGUI()
+        self.cutting_win.show()
 class AffectWindow(QWidget):
     def __init__(self):
         super().__init__()
@@ -142,128 +144,7 @@ class AffectWindow(QWidget):
         })
 
         summary.to_csv(self.output_file, index=False)
-
-class CuttingStockWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-
-        self.setFont(QFont('FiraCode Nerd Font', 12))
-        self.material_file = None 
-        self.pieces_file = None   
-        self.output_file = None
-        self.setup()
-
-    def setup(self):
-        general_label = QLabel('Veuillez fournir les données\n nécessaires en format CSV.', self)
-        material_label = QLabel('Caractéristiques du matériau:', self)
-        pieces_label = QLabel('Spécifications des pièces:', self)
-        dest_label = QLabel('Fichier des résultats:', self)
-
-        material_btn = ActionButton(self.material_upload, 'Parcourir...', self)
-        pieces_btn = ActionButton(self.pieces_upload, 'Parcourir...', self) 
-        
-        default_output = getcwd() + '/cutting_stock_results.csv'
-        self.output_file = default_output
-        dest_field = QLineEdit(default_output, self)
-        dest_field.editingFinished.connect(lambda: self.update_output_loc(dest_field.text()))
-
-        confirm_btn = ActionButton(self.solve_cutting_stock, 'Confirmer', self)
-
-        general_label.setFont(QFont('FiraCode Nerd Font', 14, weight=100))
-        general_label.move(150, 100)
-
-        material_btn.setToolTip('Format:<br>- première colonne: longueur du matériau (nom: length)<br>- deuxième colonne: largeur max (nom: max_width)<br>- autres colonnes: contraintes additionnelles')
-        pieces_btn.setToolTip('Format:<br>- première colonne: longueurs des pièces (nom: lengths)<br>- deuxième colonne: demandes (nom: demands)')
-
-        material_label.move(130, 200)
-        material_btn.move(350, 195)
-
-        pieces_label.move(130, 250)
-        pieces_btn.move(350, 245)
-
-        dest_label.move(50, 325)
-        dest_field.resize(250, dest_field.sizeHint().height())
-        dest_field.move(300, 320)
-
-        confirm_btn.resize(120, confirm_btn.sizeHint().height())
-        confirm_btn.move(240, 375)
-
-        self.setGeometry(690, 315, 600, 450)
-        self.setWindowTitle('Problème de découpe (Cutting Stock)')
-        self.show()
-
-    def material_upload(self):
-        self.material_file,_ = QFileDialog.getOpenFileName(self, 'Caractéristiques du matériau')
-
-    def pieces_upload(self):
-        self.pieces_file,_ = QFileDialog.getOpenFileName(self, 'Spécifications des pièces')
-
-    def update_output_loc(self, path : str):
-        self.output_file = path
-
-    def solve_cutting_stock(self):
-        try:
-            if not self.material_file or not self.pieces_file:
-                print("Error: Please select both material and pieces files")
-                return
-            
-            material_data = pd.read_csv(self.material_file)
-            pieces_data = pd.read_csv(self.pieces_file)
-
-            # Lire les caractéristiques du matériau
-            assert 'length' in material_data
-            L = float(material_data['length'].iloc[0])
-            
-            max_width = None
-            if 'max_width' in material_data:
-                max_width = int(material_data['max_width'].iloc[0])
-            
-            # Lire les spécifications des pièces
-            assert 'lengths' in pieces_data
-            assert 'demands' in pieces_data
-           
-            lengths = pieces_data['lengths'].astype(float).tolist()
-            demands = pieces_data['demands'].astype(int).tolist()
-
-            print(f"\n=== Cutting Stock Problem ===")
-            print(f"Material length: {L}")
-            print(f"Max width: {max_width if max_width else 'No limit'}")
-            print(f"Pieces: {len(lengths)} types")
-            print(f"Demands: {demands}")
-            
-            # Résoudre le problème
-            result = solve_cutting_stock(L, lengths, demands, max_width)
-            
-            if result["status"] != "OPTIMAL":
-                print("Error: No optimal solution found")
-                return
-            
-            # Créer le résumé
-            summary_data = []
-            for i, item in enumerate(result["solution"]):
-                pattern_str = "|".join(str(x) for x in item["pattern"])
-                summary_data.append({
-                    'Pattern_ID': i+1,
-                    'Pattern': pattern_str,
-                    'Amount': item["amount"],
-                    'Waste_per_unit': item["waste_per_unit"], 
-                    'Total_waste': item["waste_total"]        
-                })
-            
-            summary_df = pd.DataFrame(summary_data)
-            summary_df.to_csv(self.output_file, index=False)
-            
-            print(f"\n✓ Cutting stock optimization completed successfully!")
-            print(f"Total material needed: {result['total_material']:.3f}")
-            print(f"Total waste: {result['total_waste']:.3f}")
-            print(f"Utilization rate: {result['utilization']*100:.1f}%")
-            print(f"Results saved to: {self.output_file}")
-            
-        except Exception as e:
-            print(f"Error during cutting stock optimization: {e}")
-            import traceback
-            traceback.print_exc()
-            
+  
 class TaskAssignmentWindow(QWidget):
     def __init__(self):
         super().__init__()
