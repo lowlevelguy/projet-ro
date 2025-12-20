@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QMessageBox, QProgressBar, QHeaderView, QGridLayout)
 from PyQt5.QtCore import Qt, QThread, pyqtSignal
 from PyQt5.QtGui import QFont
-from facility_location import FacilityLocationSolver, Location, DemandPoint, FacilityConstraints
+from facility_location import FacilityLocationSolver, DemandPoint, FacilityConstraints
 import matplotlib
 matplotlib.use('Qt5Agg')
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -16,18 +16,17 @@ from matplotlib.figure import Figure
 class SolverThread(QThread):
     finished = pyqtSignal(dict)
     
-    def __init__(self, locations, demand_points, constraints, time_limit):
+    def __init__(self, locations, demand_points, constraints):
         super().__init__()
         self.locations = locations
         self.demand_points = demand_points
         self.constraints = constraints
-        self.time_limit = time_limit
     
     def run(self):
         try:
             solver = FacilityLocationSolver(self.locations, self.demand_points, 
                                            self.constraints)
-            solution = solver.solve(self.time_limit)
+            solution = solver.solve()
             self.finished.emit(solution)
         except Exception as e:
             import traceback
@@ -42,14 +41,12 @@ class MapCanvas(FigureCanvas):
     def __init__(self, parent=None):
         self.fig = Figure(figsize=(10, 8))
         self.axes = self.fig.add_subplot(111)
-        self.colorbar = None
         super().__init__(self.fig)
         self.setParent(parent)
     
     def plot_solution(self, locations, demand_points, solution):
         self.fig.clear()
         self.axes = self.fig.add_subplot(111)
-        self.colorbar = None
         
         import numpy as np
         
@@ -72,8 +69,8 @@ class MapCanvas(FigureCanvas):
                     min_dist = min(min_dist, dist)
                 Z[i,j] = min_dist
         
-        contour = self.axes.contourf(X, Y, Z, levels=15, cmap='RdYlGn_r', alpha=0.6)
-        self.colorbar = self.fig.colorbar(contour, ax=self.axes, label='Distance to nearest facility (km)')
+        self.axes.contourf(X, Y, Z, levels=15, cmap='RdYlGn_r', alpha=0.6)
+        self.fig.colorbar(self.axes.collections[0], ax=self.axes, label='Distance to nearest facility (km)')
         
         special_demands = [dp for dp in demand_points if dp.demand_multiplier > 1.0]
         
@@ -82,7 +79,9 @@ class MapCanvas(FigureCanvas):
             self.axes.scatter(dp.x, dp.y, c='orange', s=size, alpha=0.8, 
                             marker='o', edgecolors='black', linewidth=2, zorder=5)
             self.axes.annotate(dp.name, (dp.x, dp.y), fontsize=8, 
-                             xytext=(5, 5), textcoords='offset points')
+                             xytext=(0, 0), textcoords='offset points',
+                             bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor='none', alpha=0.8),
+                             ha='center', va='center', zorder=15)
         
         for fac in opened_facs:
             self.axes.scatter(fac['x'], fac['y'], c='darkblue', s=500, 
@@ -90,7 +89,9 @@ class MapCanvas(FigureCanvas):
                             zorder=10)
             self.axes.annotate(fac['name'], (fac['x'], fac['y']), 
                              fontsize=10, fontweight='bold',
-                             xytext=(5, -15), textcoords='offset points')
+                             xytext=(0, -20), textcoords='offset points',
+                             bbox=dict(boxstyle='round,pad=0.5', facecolor='white', edgecolor='none', alpha=0.8),
+                             ha='center', va='top', zorder=15)
         
         self.axes.set_xlabel('X (km)', fontsize=12)
         self.axes.set_ylabel('Y (km)', fontsize=12)
@@ -111,7 +112,6 @@ class MapCanvas(FigureCanvas):
 class FacilityLocationGUI(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.locations = []
         self.demand_points = []
         self.constraints = None
         self.solution = None
@@ -141,10 +141,12 @@ class FacilityLocationGUI(QMainWindow):
         button_layout = QHBoxLayout()
         
         self.solve_btn = QPushButton("Solve")
+        self.solve_btn.setStyleSheet("background-color: #4CAF50; color: white; font-size: 14px; padding: 10px;")
         self.solve_btn.clicked.connect(self.solve_problem)
         button_layout.addWidget(self.solve_btn)
         
         self.clear_btn = QPushButton("Clear")
+        self.clear_btn.setStyleSheet("background-color: #f44336; color: white; font-size: 14px; padding: 10px;")
         self.clear_btn.clicked.connect(self.clear_all)
         button_layout.addWidget(self.clear_btn)
         
@@ -194,12 +196,6 @@ class FacilityLocationGUI(QMainWindow):
         self.grid_density_spin.setValue(6)
         self.grid_density_spin.setToolTip("Number of grid points per side (e.g., 6 = 6x6 = 36 potential locations)")
         constraints_layout.addWidget(self.grid_density_spin, 3, 1)
-        
-        constraints_layout.addWidget(QLabel("Time limit (seconds):"), 4, 0)
-        self.time_limit_spin = QSpinBox()
-        self.time_limit_spin.setRange(10, 3600)
-        self.time_limit_spin.setValue(180)
-        constraints_layout.addWidget(self.time_limit_spin, 4, 1)
         
         constraints_group.setLayout(constraints_layout)
         layout.addWidget(constraints_group)
@@ -305,8 +301,6 @@ class FacilityLocationGUI(QMainWindow):
                 self.demand_table.setItem(row, col, QTableWidgetItem(str(value)))
     
     def collect_data(self):
-        locations = []
-        
         demand_points = []
         for row in range(self.demand_table.rowCount()):
             name = self.demand_table.item(row, 0).text()
@@ -326,11 +320,11 @@ class FacilityLocationGUI(QMainWindow):
             grid_density=self.grid_density_spin.value()
         )
         
-        return locations, demand_points, constraints
+        return demand_points, constraints
     
     def solve_problem(self):
         try:
-            self.locations, self.demand_points, self.constraints = self.collect_data()
+            self.demand_points, self.constraints = self.collect_data()
             
             if not self.demand_points:
                 QMessageBox.warning(self, "Error", "Add at least one demand point")
@@ -340,10 +334,9 @@ class FacilityLocationGUI(QMainWindow):
             self.progress_bar.setVisible(True)
             self.status_label.setText("Optimizing...")
             
-            time_limit = self.time_limit_spin.value()
             self.solver_thread = SolverThread(
-                self.locations, self.demand_points, 
-                self.constraints, time_limit
+                [], self.demand_points, 
+                self.constraints
             )
             self.solver_thread.finished.connect(self.on_solve_finished)
             self.solver_thread.start()
@@ -408,7 +401,7 @@ class FacilityLocationGUI(QMainWindow):
             self.assignments_table.setItem(row, 2, QTableWidgetItem(assign['facility']))
             self.assignments_table.setItem(row, 3, QTableWidgetItem(f"{assign['distance']:.2f}"))
         
-        self.map_canvas.plot_solution(self.locations, self.demand_points, sol)
+        self.map_canvas.plot_solution([], self.demand_points, sol)
     
     def clear_all(self):
         self.demand_table.setRowCount(0)
