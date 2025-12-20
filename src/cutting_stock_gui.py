@@ -9,7 +9,7 @@ from PyQt5.QtGui import QFont, QFontDatabase, QColor
 from cutting_stock import CuttingStockSolver, Piece, PlateType
 
 
-# ------------------- THREAD -------------------
+
 class SolverThread(QThread):
     """Thread pour exécuter le solveur sans bloquer l'interface"""
     finished = pyqtSignal(dict)
@@ -37,7 +37,7 @@ class SolverThread(QThread):
         except Exception as e:
             self.finished.emit({"status": "error", "message": str(e)})
 
-# ------------------- GUI -------------------
+
 class CuttingStockGUI(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -101,7 +101,7 @@ class CuttingStockGUI(QMainWindow):
         # Charger des données par défaut
         self.load_default_data()
     
-    # ------------------- INPUT TAB -------------------
+
     def create_input_tab(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -166,8 +166,8 @@ class CuttingStockGUI(QMainWindow):
         layout.addWidget(options_group)
         
         return widget
+ 
     
-    # ------------------- RESULTS TAB -------------------
     def create_results_tab(self):
         widget = QWidget()
         layout = QVBoxLayout(widget)
@@ -218,7 +218,7 @@ class CuttingStockGUI(QMainWindow):
         
         return widget
     
-    # ------------------- ADD ROWS -------------------
+  
     def add_piece_row(self):
         row = self.pieces_table.rowCount()
         self.pieces_table.insertRow(row)
@@ -285,11 +285,10 @@ class CuttingStockGUI(QMainWindow):
         quality_combo.setCurrentIndex(1)
         self.plates_table.setCellWidget(row, 5, quality_combo)
     
-    # ------------------- DELETE -------------------
+
     def delete_piece_row(self, row):
         self.pieces_table.removeRow(row)
-    
-    # ------------------- DEFAULT DATA -------------------
+
     def load_default_data(self):
         # Pièces par défaut
         default_pieces = [
@@ -305,11 +304,13 @@ class CuttingStockGUI(QMainWindow):
             self.pieces_table.setItem(row, 0, QTableWidgetItem(name))
             
             width_spin = QDoubleSpinBox()
+            width_spin.setRange(1, 10000)
             width_spin.setValue(w)
             width_spin.setSuffix(" cm")
             self.pieces_table.setCellWidget(row, 1, width_spin)
             
             height_spin = QDoubleSpinBox()
+            height_spin.setRange(1, 10000)
             height_spin.setValue(h)
             height_spin.setSuffix(" cm")
             self.pieces_table.setCellWidget(row, 2, height_spin)
@@ -340,21 +341,25 @@ class CuttingStockGUI(QMainWindow):
             self.plates_table.setItem(row, 0, QTableWidgetItem(name))
             
             width_spin = QDoubleSpinBox()
+            width_spin.setRange(10, 10000)
             width_spin.setValue(w)
             width_spin.setSuffix(" cm")
             self.plates_table.setCellWidget(row, 1, width_spin)
             
             height_spin = QDoubleSpinBox()
+            height_spin.setRange(10, 10000)
             height_spin.setValue(h)
             height_spin.setSuffix(" cm")
             self.plates_table.setCellWidget(row, 2, height_spin)
             
             cost_spin = QDoubleSpinBox()
+            cost_spin.setRange(1, 100000)
             cost_spin.setValue(cost)
             cost_spin.setSuffix(" €")
             self.plates_table.setCellWidget(row, 3, cost_spin)
             
             stock_spin = QSpinBox()
+            stock_spin.setRange(0, 10000)
             stock_spin.setValue(stock)
             self.plates_table.setCellWidget(row, 4, stock_spin)
             
@@ -362,8 +367,7 @@ class CuttingStockGUI(QMainWindow):
             quality_combo.addItems(["Premium (1)", "Standard (2)", "Économique (3)"])
             quality_combo.setCurrentIndex(quality)
             self.plates_table.setCellWidget(row, 5, quality_combo)
-    
-    # ------------------- COLLECT DATA -------------------
+ 
     def collect_input_data(self):
         pieces = []
         plates = []
@@ -408,7 +412,7 @@ class CuttingStockGUI(QMainWindow):
         
         return pieces, plates
 
-    # ------------------- SOLVE -------------------
+
     def solve_problem(self):
         if self.pieces_table.rowCount() == 0:
             QMessageBox.warning(self, "Erreur", "Veuillez ajouter au moins une pièce!")
@@ -452,8 +456,7 @@ class CuttingStockGUI(QMainWindow):
         self.display_solution()
         self.status_label.setText("✓ Solution optimale trouvée!")
         self.tabs.setCurrentIndex(1)
-    
-    # ------------------- DISPLAY -------------------
+
     def display_solution(self):
         sol = self.solution
         
@@ -500,7 +503,7 @@ class CuttingStockGUI(QMainWindow):
             
             self.production_table.setItem(row, 2, QTableWidgetItem(str(piece.demand)))
     
-    # ------------------- CLEAR -------------------
+
     def clear_all(self):
         reply = QMessageBox.question(
             self, 'Confirmation',
@@ -517,7 +520,6 @@ class CuttingStockGUI(QMainWindow):
             self.status_label.setText("Prêt à optimiser")
 
 
-# ------------------- MAIN -------------------
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
