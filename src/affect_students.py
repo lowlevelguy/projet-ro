@@ -39,7 +39,7 @@ def affect_interns(students, internships, internship_capacities):
 
     if model.Status == GRB.OPTIMAL or \
         (model.Status == GRB.TIME_LIMIT and model.SolCount > 0):
-        return np.array([[z[i, j].X for j in range(m)] for i in range(n)])
+        return np.array([[z[i, j].X for j in range(m)] for i in range(n)]), model.ObjVal, model.Status
 
     raise Exception(f"Optimization failed with status: {model.Status}")
 
