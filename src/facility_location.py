@@ -182,13 +182,12 @@ class FacilityLocationSolver:
                     travel_cost = (nearest_dist * self.constraints.travel_cost_per_km * 
                                  self.constraints.base_annual_visits * demand.demand_multiplier)
                     
-                    if demand.demand_multiplier > 1.0:
-                        assignments.append({
-                            'demand_point': demand.name,
-                            'multiplier': demand.demand_multiplier,
-                            'facility': nearest_fac.name,
-                            'distance': nearest_dist
-                        })
+                    assignments.append({
+                        'demand_point': demand.name,
+                        'multiplier': demand.demand_multiplier,
+                        'facility': nearest_fac.name,
+                        'distance': nearest_dist
+                    })
                     
                     total_travel_cost += travel_cost
                     total_distance += nearest_dist
